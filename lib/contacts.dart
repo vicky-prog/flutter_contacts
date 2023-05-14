@@ -1,6 +1,7 @@
+import 'package:contacts/sticky.dart';
 import 'package:flutter/material.dart';
 
-
+const double _itemHeight = 60;
 class Contact {
   final String name;
   final String phoneNumber;
@@ -49,100 +50,7 @@ class ContactsScreen extends StatefulWidget {
   _ContactsScreenState createState() => _ContactsScreenState();
 }
 
-// class _ContactsScreenState extends State<ContactsScreen> {
-//   final ScrollController _scrollController = ScrollController();
- 
-//   final Map<String, int> _alphabetMap = {
-//     'A': 0,
-//     'B': 1,
-//     'C': 2,
-//     'D': 3,
-//     'E': 4,
-//     'F': 5,
-//     'G': 6,
-//     'H': 7,
-//     'I': 8,
-//     'J': 9,
-//     'K': 10,
-//     'L': 11,
-//     'M': 12,
-//     'N': 13,
-//     'O': 14,
-//     'P': 15,
-//     'Q': 16,
-//     'R': 17,
-//     'S': 18,
-//     'T': 19,
-//     'U': 20,
-//     'V': 21,
-//     'W': 22,
-//     'X': 23,
-//     'Y': 24,
-//     'Z': 25,
-//   };
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Contacts')),
-//       body: Stack(
-//         children: [
-//           ListView.builder(
-//             controller: _scrollController,
-//             itemCount: contacts.length,
-//             itemBuilder: (BuildContext context, int index) {
-//               final contact = contacts[index];
-//               return ListTile(
-//                 title: Text(contact.name),
-//                 subtitle: Text(contact.phoneNumber),
-//               );
-//             },
-//           ),
-//           Container(
-//             height: 400,
-//             alignment: Alignment.centerRight,
-//             //height: 28,
-//             child: Padding(
-//               padding: const EdgeInsets.symmetric(horizontal: 4.0),
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: _alphabetMap.keys.map((String letter) {
-//                   return GestureDetector(
-//                      onVerticalDragDown: (DragDownDetails details) {
-//                        print(letter);
-//               _scrollTo(details.localPosition.dy);
-//             },
-//             onPanUpdate: (DragUpdateDetails details){
-//             print(letter);
-//             },
-//                     child: Container(
-//                       width: 45,
-//                       height: 400/26,
-//                       child: Text(
-//                         letter,
-//                         style: const TextStyle(fontSize: 14),
-//                       ),
-//                     ),
-//                   );
-//                 }).toList(),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   void _scrollTo(double position) {
-//     final letterHeight = 45;
-//     final targetIndex = (position / letterHeight).floor();
-//     final targetLetter = _alphabetMap.keys.toList()[targetIndex];
-//     final targetOffset = _scrollController.position.minScrollExtent +
-//         (_alphabetMap[targetLetter] ?? 0) * 72;
-//     _scrollController.animateTo(targetOffset,
-//         duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
-//   }
-// }
 
 class _ContactsScreenState extends State<ContactsScreen> {
   final ScrollController _scrollController = ScrollController();
@@ -177,87 +85,166 @@ class _ContactsScreenState extends State<ContactsScreen> {
   };
   String _selectedLetter = '';
 
+   int _firstVisibleIndex = 0;
+  int _lastVisibleIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    super.dispose();
+  }
+
+  void _scrollListener() {
+   // replace with your item height
+    final offset = _scrollController.offset;
+    final height = _scrollController.position.viewportDimension;
+    final int firstVisibleIndex = (offset / _itemHeight).floor();
+    final int lastVisibleIndex = ((offset + height) / _itemHeight).ceil() - 1;
+
+    setState(() {
+      _firstVisibleIndex = firstVisibleIndex;
+      _lastVisibleIndex = lastVisibleIndex;
+      _selectedLetter = _contacts[_firstVisibleIndex].name[0];
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contacts')),
+   
       body: Stack(
         children: [
-          ListView.builder(
-            controller: _scrollController,
-            itemCount: _contacts.length,
-            itemBuilder: (BuildContext context, int index) {
-              final contact = _contacts[index];
-              if (_selectedLetter.isNotEmpty &&
-                  !_contacts[index].name.startsWith(_selectedLetter)) {
-                return const SizedBox.shrink();
-              }
-              return ListTile(
-                title: Text(contact.name),
-                subtitle: Text(contact.phoneNumber),
-              );
-            },
-          ),
 
-          
-          Container(
-            
-            alignment: Alignment.centerRight,
-           
-            child: GestureDetector(
-                onVerticalDragDown: (DragDownDetails details) {
-                    _scrollTo(details.localPosition.dy);
-                  },
-                  onVerticalDragUpdate: (DragUpdateDetails details) {
-                    final RenderBox box = context.findRenderObject() as RenderBox;
-                    final offsetY = box.globalToLocal(details.globalPosition).dy;
-                    final index = (offsetY ~/ 28).clamp(0, _alphabetMap.length - 1);
-                    final selectedLetter = _alphabetMap.keys.elementAt(index);
-                    if (selectedLetter != _selectedLetter) {
-                      setState(() {
-                        _selectedLetter = selectedLetter;
-                      });
-                      _scrollTo(_alphabetMap[selectedLetter]! * 28.0);
-                    }
-                  },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child: Column(
-                 // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: _alphabetMap.keys.map((String letter) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedLetter = letter;
-                        });
-                        _scrollTo(_alphabetMap[letter]! * 28.0);
-                      },
-                      child: Text(
-                        letter,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color:
-                              _selectedLetter == letter ? Colors.blue : null,
-                          fontWeight: _selectedLetter == letter
-                              ? FontWeight.bold
-                              : null,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+          CustomScrollView(
+          controller : _scrollController,
+          slivers: [
+            const SliverAppBar(
+              title: Text('Contacts'),
+              pinned: true,
+            ),
+             SliverPersistentHeader(
+            delegate: MySliverPersistentHeaderDelegate(
+              minHeight: 50,
+              maxHeight: 50,
+              child: Container(
+                color: Colors.black,
+                child: Row(
+                  children: [
+                    SizedBox(width: 16,),
+                    Text(_contacts[_firstVisibleIndex].name[0],style: TextStyle(color: Colors.white),),
+                   // Text(_firstVisibleIndex.toString(),style: TextStyle(color: Colors.white),)
+                  ],
                 ),
               ),
             ),
+            pinned: true,
           ),
+          SliverList(
+            
+  delegate: SliverChildBuilderDelegate(
+    
+    (BuildContext context, int index) {
+        final contact = _contacts[index];
+      //  if (_selectedLetter.isNotEmpty &&
+      //             !_contacts[index].name.startsWith(_selectedLetter)) {
+      //           return const SizedBox.shrink();
+      //         }
+     return Container(
+      height: _itemHeight,
+       child: ListTile(
+                  title: Text(contact.name),
+                  subtitle: Text(contact.phoneNumber),
+                ),
+     );
+    },
+    childCount: _contacts.length, // Replace with your actual item count
+  ),
+)
+          ],
+        ),
+          // Container(
+          //    alignment: Alignment.topRight,
+          //   child: Padding(
+          //     padding: const EdgeInsets.only(right:28.0),
+          //     child: Text(_selectedLetter,style: TextStyle(fontSize: 20),),
+          //   ),
+          // ),
+        _te()
+
+          
+        
         ],
       ),
     );
   }
 
+  _te(){
+    return   Positioned(
+      right: 0,
+      top: 150,
+
+      child: Container(
+              
+              alignment: Alignment.centerRight,
+             
+              child: GestureDetector(
+                  onVerticalDragDown: (DragDownDetails details) {
+                     // _scrollTo(details.localPosition.dy);
+                    },
+                    onVerticalDragUpdate: (DragUpdateDetails details) {
+                      final RenderBox box = context.findRenderObject() as RenderBox;
+                      final offsetY = box.globalToLocal(details.globalPosition).dy;
+                      final index = (offsetY ~/ _itemHeight).clamp(0, _alphabetMap.length - 1);
+                      final selectedLetter = _alphabetMap.keys.elementAt(index);
+                      if (selectedLetter != _selectedLetter) {
+                        setState(() {
+                          _selectedLetter = selectedLetter;
+                        });
+                        _scrollTo(_alphabetMap[selectedLetter]! * _itemHeight);
+                      }
+                    },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Column(
+                  
+                    children: _alphabetMap.keys.map((String letter) {
+                      return GestureDetector(
+                        onTap: () {
+                          print(_alphabetMap[letter]!);
+                          setState(() {
+                            _selectedLetter = letter;
+                          });
+                          _scrollTo(_alphabetMap[letter]! * _itemHeight);
+                        },
+                        child: Text(
+                          letter,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                _selectedLetter == letter ? Colors.blue : null,
+                            fontWeight: _selectedLetter == letter
+                                ? FontWeight.bold
+                                : null,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
   void _scrollTo(double position) {
-    final index = position ~/ 28;
+    final index = position ~/ _itemHeight;
     print(index);
-    _scrollController.animateTo(index * 28.0,
+    _scrollController.animateTo(index * _itemHeight,
         duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
   }
 }
